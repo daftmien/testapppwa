@@ -1,4 +1,13 @@
 
+// Objet pour stocker les associations slides -> sons
+const slideSounds = {
+  "slide-1": "/audios/sound1.mp3",
+  "slide-2": "/audios/sound2.mp3",
+  "slide-3": "/audios/sound3.mp3"
+};
+
+let currentAudio = null;
+
 // Fonction pour récupérer le nom de la slide active
 function getCurrentSlideName() {
   const elements = document.querySelectorAll('[aria-label], [title], [data-title]');
@@ -11,19 +20,26 @@ function getCurrentSlideName() {
   return null;
 }
 
-// Sauvegarde automatique du nom de la slide dans localStorage pour une récupération persistante
+// Fonction pour jouer le son de la slide actuelle
+function playSlideAudio(slideName) {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+
+  const audioSrc = slideSounds[slideName];
+  if (audioSrc) {
+    currentAudio = new Audio(audioSrc);
+    currentAudio.play().catch(e => console.warn("⚠️ Erreur de lecture audio :", e));
+  }
+}
+
+// Sauvegarde automatique du nom de la slide dans localStorage
 function saveSlideName() {
   const name = getCurrentSlideName();
   if (name) {
     localStorage.setItem('genially-slide-name', name);
-  }
-}
-
-// Fonction pour simuler un clic sur la flèche de navigation pour avancer
-function simulateNextSlide() {
-  const arrow = document.querySelector('svg path[d*="M"]'); // Sélectionne une flèche de navigation (à adapter si nécessaire)
-  if (arrow) {
-    arrow.parentElement.click();
+    playSlideAudio(name); // Joue le son correspondant
   }
 }
 
@@ -40,10 +56,10 @@ function restoreSlide() {
       const label = el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('data-title');
       if (label === savedName) {
         console.log('✅ Slide restaurée :', savedName);
+        playSlideAudio(savedName);
         return true;
       }
     }
-    simulateNextSlide(); // Simule un clic pour avancer jusqu'à la bonne slide
     return false;
   };
 
@@ -54,13 +70,13 @@ function restoreSlide() {
     if (success || attempts > 20) {
       clearInterval(interval);
     }
-  }, 1000); // Attendre 1 seconde entre chaque tentative
+  }, 1000);
 }
 
 // Observer les changements dans le DOM pour suivre la progression
 const observer = new MutationObserver(saveSlideName);
 window.addEventListener('load', () => {
-  setTimeout(restoreSlide, 3000); // Attendre 3s pour que Genially charge complètement
+  setTimeout(restoreSlide, 3000);
   const target = document.body;
   observer.observe(target, { childList: true, subtree: true });
 });
