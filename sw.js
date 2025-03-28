@@ -1,14 +1,14 @@
  
 // Nom du cache
-const CACHE_NAME = "pwa-cache-v2";
+const CACHE_NAME = "pwa-cache-v3";
 
-// Installation du Service Worker et mise en cache dynamique
+// Installation du Service Worker et pré-chargement en cache
 self.addEventListener("install", event => {
-    self.skipWaiting();
     console.log("📥 Service Worker installé - Prêt pour la mise en cache dynamique !");
+    self.skipWaiting();
 });
 
-// Activation et suppression des anciens caches
+// Activation et suppression des anciens caches (mais conservation des fichiers déjà en cache)
 self.addEventListener("activate", event => {
     event.waitUntil(
         caches.keys().then(cacheNames => {
@@ -25,15 +25,15 @@ self.addEventListener("activate", event => {
     self.clients.claim();
 });
 
-// Interception des requêtes et mise en cache dynamique pour TOUS les fichiers (y compris images et sons)
+// Interception des requêtes et mise en cache dynamique + conservation après fermeture
 self.addEventListener("fetch", event => {
     event.respondWith(
-        caches.match(event.request).then(response => {
-            return response || fetch(event.request).then(networkResponse => {
-                return caches.open(CACHE_NAME).then(cache => {
+        caches.open(CACHE_NAME).then(cache => {
+            return cache.match(event.request).then(response => {
+                return response || fetch(event.request).then(networkResponse => {
                     if (networkResponse && networkResponse.ok) {
                         cache.put(event.request, networkResponse.clone());
-                        console.log(`✅ Fichier mis en cache dynamiquement : ${event.request.url}`);
+                        console.log(`✅ Fichier ajouté au cache : ${event.request.url}`);
                     }
                     return networkResponse;
                 });
