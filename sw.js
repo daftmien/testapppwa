@@ -1,6 +1,6 @@
  
 // Nom du cache
-const CACHE_NAME = "pwa-cache-v1";
+const CACHE_NAME = "pwa-cache-v2";
 
 // Installation du Service Worker et mise en cache dynamique
 self.addEventListener("install", event => {
@@ -25,13 +25,12 @@ self.addEventListener("activate", event => {
     self.clients.claim();
 });
 
-// Interception des requêtes et mise en cache dynamique
+// Interception des requêtes et mise en cache dynamique pour TOUS les fichiers (y compris images et sons)
 self.addEventListener("fetch", event => {
     event.respondWith(
         caches.match(event.request).then(response => {
             return response || fetch(event.request).then(networkResponse => {
                 return caches.open(CACHE_NAME).then(cache => {
-                    // Mise en cache uniquement des requêtes réussies
                     if (networkResponse && networkResponse.ok) {
                         cache.put(event.request, networkResponse.clone());
                         console.log(`✅ Fichier mis en cache dynamiquement : ${event.request.url}`);
@@ -44,6 +43,15 @@ self.addEventListener("fetch", event => {
             if (event.request.destination === "document" || event.request.mode === "navigate") {
                 console.warn("📄 Fallback : Chargement de index.html hors-ligne");
                 return caches.match("/index.html");
+            } else if (event.request.destination === "image") {
+                console.warn("🖼 Fallback : Chargement d'une image depuis le cache :", event.request.url);
+                return caches.match(event.request.url);
+            } else if (event.request.destination === "audio") {
+                console.warn("🎵 Fallback : Chargement d'un fichier audio depuis le cache :", event.request.url);
+                return caches.match(event.request.url);
+            } else if (event.request.destination === "script") {
+                console.warn("📜 Fallback : Chargement d'un script JS depuis le cache :", event.request.url);
+                return caches.match(event.request.url);
             }
         })
     );
