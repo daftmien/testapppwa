@@ -1,6 +1,6 @@
  
 // Nom du cache
-const CACHE_NAME = "solo-rouge-cache-v9";
+const CACHE_NAME = "solo-rouge-cache-v10";
 
 // Liste des fichiers à mettre en cache (incluant tous les fichiers du jeu)
 const FILES_TO_CACHE = [
@@ -24,13 +24,27 @@ const FILES_TO_CACHE = [
   "/images/background5.jpg"
 ];
 
-// Installation du Service Worker et mise en cache immédiate de TOUS les fichiers
+// Installation du Service Worker et mise en cache des fichiers (avec gestion des erreurs)
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("📥 Mise en cache FORCÉE de tous les fichiers...");
-      return cache.addAll(FILES_TO_CACHE);
-    }).catch(err => console.warn("⚠️ Erreur lors de la mise en cache :", err))
+      console.log("📥 Tentative de mise en cache des fichiers...");
+      
+      // Ajout des fichiers un par un et gestion des erreurs
+      return Promise.allSettled(
+        FILES_TO_CACHE.map(url =>
+          fetch(url, { cache: "no-store" })
+            .then(response => {
+              if (!response.ok) {
+                console.warn(`⚠️ Impossible de mettre en cache ${url} (HTTP ${response.status})`);
+                return;
+              }
+              return cache.put(url, response);
+            })
+            .catch(err => console.warn(`⚠️ Erreur lors de la mise en cache de ${url}:`, err))
+        )
+      );
+    }).catch(err => console.warn("⚠️ Erreur lors de l'ouverture du cache :", err))
   );
   self.skipWaiting();
 });
@@ -52,7 +66,7 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// Gestion des requêtes réseau avec fallback au cache (garantie que tout marche hors-ligne)
+// Gestion des requêtes réseau avec fallback au cache
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
@@ -63,18 +77,13 @@ self.addEventListener("fetch", event => {
         });
       });
     }).catch(() => {
-      // Fallback pour assurer que tout fonctionne hors-ligne
+      // Fallback pour garantir le fonctionnement hors-ligne
       if (event.request.destination === "document" || event.request.mode === "navigate") {
-        console.warn("📄 Fallback : Chargement de index.html hors-ligne");
         return caches.match("/index.html");
       } else if (event.request.destination === "audio") {
-        console.warn("🎵 Fallback : Chargement d'un fichier audio depuis le cache pour :", event.request.url);
         return caches.match(event.request.url);
       } else if (event.request.destination === "image") {
-        console.warn("🖼 Fallback : Chargement d'une image depuis le cache pour :", event.request.url);
         return caches.match(event.request.url);
-      } else {
-        console.warn("🚫 Fichier non trouvé dans le cache :", event.request.url);
       }
     })
   );
