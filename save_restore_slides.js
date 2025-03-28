@@ -1,9 +1,11 @@
 
 // Objet pour stocker les associations slides -> sons
 const slideSounds = {
-  "slide-1": "/audios/sound1.mp3",
-  "slide-2": "/audios/sound2.mp3",
-  "slide-3": "/audios/sound3.mp3"
+  "slide-1": "/audios/slide1.mp3",
+  "slide-2": "/audios/slide2.mp3",
+  "slide-3": "/audios/slide3.mp3",
+  "slide-4": "/audios/slide4.mp3",
+  "slide-5": "/audios/slide5.mp3"
 };
 
 let currentAudio = null;

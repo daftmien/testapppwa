@@ -1,8 +1,8 @@
  
 // Nom du cache
-const CACHE_NAME = "solo-rouge-cache-v4";
+const CACHE_NAME = "solo-rouge-cache-v5";
 
-// Liste des fichiers à mettre en cache
+// Liste des fichiers à mettre en cache (incluant tous les sons)
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
@@ -12,7 +12,11 @@ const FILES_TO_CACHE = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/fonts/Jqz55SSPQuCQF3t8uOwiUL-taUTtap9Gayo.woff2",
-  "/audios/92325de9-63a1-4198-ace2-01cd48e31fcc.mpga"
+  "/audios/slide1.mp3",
+  "/audios/slide2.mp3",
+  "/audios/slide3.mp3",
+  "/audios/slide4.mp3",
+  "/audios/slide5.mp3"
 ];
 
 // Installation du Service Worker et mise en cache des fichiers essentiels
@@ -20,8 +24,6 @@ self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log("📥 Mise en cache des fichiers essentiels...");
-      
-      // Ajouter les fichiers un par un et ignorer ceux qui échouent
       return Promise.all(
         FILES_TO_CACHE.map(url =>
           fetch(url, { cache: "no-store" })
@@ -71,9 +73,7 @@ self.addEventListener("fetch", event => {
       if (event.request.destination === "document") {
         return caches.match("/index.html");
       } else if (event.request.destination === "audio") {
-        return caches.match("/audios/92325de9-63a1-4198-ace2-01cd48e31fcc.mpga");
-      } else if (event.request.destination === "font") {
-        return caches.match("/fonts/Jqz55SSPQuCQF3t8uOwiUL-taUTtap9Gayo.woff2");
+        return caches.match(event.request.url);
       }
     })
   );
