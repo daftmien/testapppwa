@@ -1,6 +1,6 @@
  
 // Nom du cache
-const CACHE_NAME = "solo-rouge-cache-v3";
+const CACHE_NAME = "solo-rouge-cache-v4";
 
 // Liste des fichiers à mettre en cache
 const FILES_TO_CACHE = [
@@ -10,7 +10,9 @@ const FILES_TO_CACHE = [
   "/manifest.json",
   "/sw.js",
   "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/icons/icon-512.png",
+  "/fonts/Jqz55SSPQuCQF3t8uOwiUL-taUTtap9Gayo.woff2",
+  "/audios/92325de9-63a1-4198-ace2-01cd48e31fcc.mpga"
 ];
 
 // Installation du Service Worker et mise en cache des fichiers essentiels
@@ -68,6 +70,10 @@ self.addEventListener("fetch", event => {
     }).catch(() => {
       if (event.request.destination === "document") {
         return caches.match("/index.html");
+      } else if (event.request.destination === "audio") {
+        return caches.match("/audios/92325de9-63a1-4198-ace2-01cd48e31fcc.mpga");
+      } else if (event.request.destination === "font") {
+        return caches.match("/fonts/Jqz55SSPQuCQF3t8uOwiUL-taUTtap9Gayo.woff2");
       }
     })
   );
