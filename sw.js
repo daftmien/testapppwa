@@ -1,6 +1,6 @@
  
 // Nom du cache
-const CACHE_NAME = "solo-rouge-cache-v8";
+const CACHE_NAME = "solo-rouge-cache-v9";
 
 // Liste des fichiers à mettre en cache (incluant tous les fichiers du jeu)
 const FILES_TO_CACHE = [
@@ -28,7 +28,7 @@ const FILES_TO_CACHE = [
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("📥 Mise en cache immédiate de tous les fichiers...");
+      console.log("📥 Mise en cache FORCÉE de tous les fichiers...");
       return cache.addAll(FILES_TO_CACHE);
     }).catch(err => console.warn("⚠️ Erreur lors de la mise en cache :", err))
   );
@@ -78,4 +78,15 @@ self.addEventListener("fetch", event => {
       }
     })
   );
+});
+
+// Vérification après installation pour voir si tout est bien en cache
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "CHECK_CACHE") {
+    caches.open(CACHE_NAME).then(cache => {
+      cache.keys().then(keys => {
+        console.log("🔍 Fichiers actuellement en cache :", keys.map(request => request.url));
+      });
+    });
+  }
 });
