@@ -11,7 +11,7 @@ function getCurrentSlideName() {
   return null;
 }
 
-// Sauvegarde automatique du nom de la slide
+// Sauvegarde automatique du nom de la slide dans localStorage pour une récupération persistante
 function saveSlideName() {
   const name = getCurrentSlideName();
   if (name) {
@@ -19,7 +19,7 @@ function saveSlideName() {
   }
 }
 
-// Fonction pour simuler un clic sur la flèche de navigation
+// Fonction pour simuler un clic sur la flèche de navigation pour avancer
 function simulateNextSlide() {
   const arrow = document.querySelector('svg path[d*="M"]'); // Sélectionne une flèche de navigation (à adapter si nécessaire)
   if (arrow) {
@@ -27,10 +27,12 @@ function simulateNextSlide() {
   }
 }
 
-// Restauration automatique de la slide après chargement complet de Genially
+// Restauration automatique de la slide après un redémarrage
 function restoreSlide() {
-  const savedName = localStorage.getItem('genially-slide-name');
+  let savedName = localStorage.getItem('genially-slide-name');
   if (!savedName) return;
+
+  console.log("🔄 Tentative de restauration de la slide:", savedName);
 
   const tryRestore = () => {
     const elements = document.querySelectorAll('[aria-label], [title], [data-title]');
@@ -61,4 +63,11 @@ window.addEventListener('load', () => {
   setTimeout(restoreSlide, 3000); // Attendre 3s pour que Genially charge complètement
   const target = document.body;
   observer.observe(target, { childList: true, subtree: true });
+});
+
+// Vérification après mise en veille et redémarrage complet
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState === "visible") {
+    restoreSlide();
+  }
 });
