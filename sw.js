@@ -1,8 +1,8 @@
  
 // Nom du cache
-const CACHE_NAME = "solo-rouge-cache-v5";
+const CACHE_NAME = "solo-rouge-cache-v7";
 
-// Liste des fichiers à mettre en cache (incluant tous les sons)
+// Liste des fichiers à mettre en cache (incluant tous les fichiers du jeu)
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
@@ -16,28 +16,21 @@ const FILES_TO_CACHE = [
   "/audios/slide2.mp3",
   "/audios/slide3.mp3",
   "/audios/slide4.mp3",
-  "/audios/slide5.mp3"
+  "/audios/slide5.mp3",
+  "/images/background1.jpg",
+  "/images/background2.jpg",
+  "/images/background3.jpg",
+  "/images/background4.jpg",
+  "/images/background5.jpg"
 ];
 
-// Installation du Service Worker et mise en cache des fichiers essentiels
+// Installation du Service Worker et mise en cache immédiate de TOUS les fichiers
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("📥 Mise en cache des fichiers essentiels...");
-      return Promise.all(
-        FILES_TO_CACHE.map(url =>
-          fetch(url, { cache: "no-store" })
-            .then(response => {
-              if (!response.ok) {
-                console.warn(`⚠️ Impossible de mettre en cache ${url} (HTTP ${response.status})`);
-                return;
-              }
-              return cache.put(url, response);
-            })
-            .catch(err => console.warn(`⚠️ Erreur lors de la mise en cache de ${url}:`, err))
-        )
-      );
-    })
+      console.log("📥 Mise en cache immédiate de tous les fichiers...");
+      return cache.addAll(FILES_TO_CACHE);
+    }).catch(err => console.warn("⚠️ Erreur lors de la mise en cache :", err))
   );
   self.skipWaiting();
 });
@@ -59,7 +52,7 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// Gestion des requêtes réseau avec fallback au cache
+// Gestion des requêtes réseau avec fallback au cache (garantie que tout marche hors-ligne)
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
@@ -70,9 +63,12 @@ self.addEventListener("fetch", event => {
         });
       });
     }).catch(() => {
+      // Fallback pour assurer que tout fonctionne hors-ligne
       if (event.request.destination === "document") {
         return caches.match("/index.html");
       } else if (event.request.destination === "audio") {
+        return caches.match(event.request.url);
+      } else if (event.request.destination === "image") {
         return caches.match(event.request.url);
       }
     })
