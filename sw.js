@@ -1,6 +1,6 @@
-
+ 
 // Nom du cache
-const CACHE_NAME = "solo-rouge-cache-v2";
+const CACHE_NAME = "solo-rouge-cache-v3";
 
 // Liste des fichiers à mettre en cache
 const FILES_TO_CACHE = [
@@ -10,10 +10,7 @@ const FILES_TO_CACHE = [
   "/manifest.json",
   "/sw.js",
   "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/audio/background.mp3", // Remplace par le bon chemin de tes fichiers audio
-  "/audio/effect1.mp3",
-  "/audio/effect2.mp3"
+  "/icons/icon-512.png"
 ];
 
 // Installation du Service Worker et mise en cache des fichiers essentiels
@@ -21,7 +18,21 @@ self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log("📥 Mise en cache des fichiers essentiels...");
-      return cache.addAll(FILES_TO_CACHE);
+      
+      // Ajouter les fichiers un par un et ignorer ceux qui échouent
+      return Promise.all(
+        FILES_TO_CACHE.map(url =>
+          fetch(url, { cache: "no-store" })
+            .then(response => {
+              if (!response.ok) {
+                console.warn(`⚠️ Impossible de mettre en cache ${url} (HTTP ${response.status})`);
+                return;
+              }
+              return cache.put(url, response);
+            })
+            .catch(err => console.warn(`⚠️ Erreur lors de la mise en cache de ${url}:`, err))
+        )
+      );
     })
   );
   self.skipWaiting();
@@ -49,14 +60,12 @@ self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request).then(networkResponse => {
-        // Met en cache les nouvelles ressources (sauf celles venant de sources externes)
         return caches.open(CACHE_NAME).then(cache => {
           cache.put(event.request, networkResponse.clone());
           return networkResponse;
         });
       });
     }).catch(() => {
-      // Si hors-ligne et ressource introuvable, fournir une page de secours
       if (event.request.destination === "document") {
         return caches.match("/index.html");
       }
